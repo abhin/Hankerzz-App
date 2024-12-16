@@ -1,0 +1,26 @@
+{
+  "name": "hankerzz-server",
+  "version": "1.0.0",
+  "description": "Hankerzz grocery & food devlivery",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/abhin/Hankerzz-App.git"
+  },
+  "keywords": [
+    "Grocery",
+    "&",
+    "Food",
+    "Delivery",
+    "App"
+  ],
+  "author": "Abhin",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/abhin/Hankerzz-App/issues"
+  },
+  "homepage": "https://github.com/abhin/Hankerzz-App#readme"
+}
