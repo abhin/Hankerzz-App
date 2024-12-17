@@ -1,30 +1,20 @@
 import bcrypt from "bcrypt";
 import Customers from "../modals/customers.js";
-import {
-  sendAccountActivationEmail,
-  sendEmail,
-} from "../utilities/function.js";
+import { sendAccountActivationEmail } from "../utilities/function.js";
 import jwt from "jsonwebtoken";
 
 async function create(req, res) {
   const { name, email, password, profilePic, active, sendEmail } = req.body;
-  let error;
-
   try {
     const existingUser = await Customers.exists({ email });
 
-    if (existingUser != null) {
-      error = new Error("Customers already exists.");
-      error.statusCode = 400;
-      throw error;
+    if (existingUser) {
+      throw new Error("Customer already exists.");
     }
 
-    const passwordHash = await bcrypt.hashSync(
-      password,
-      parseInt(process.env.SALT_ROUNDS)
-    );
+    const passwordHash = await bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS));
 
-    const customers = await Customers.create({
+    const customer = await Customers.create({
       name,
       email,
       password: passwordHash,
@@ -32,45 +22,34 @@ async function create(req, res) {
       active,
     });
 
-    const emailSendStatus = sendEmail && !(await sendAccountActivationEmail(customers)) || {};
-
-    if (sendEmail && !emailSendStatus?.success) {
-      error = new Error(
-        "Failed to send activation email. Please contact support."
-      );
-      error.statusCode = 500;
-      throw error;
+    if (sendEmail && !(await sendAccountActivationEmail(customer))) {
+      throw new Error("Failed to send activation email. Please contact support.");
     }
 
     return res.status(200).json({
       success: true,
-      message:
-        "Account is created successfully. Please check your email for the account activation email.",
-      customers: customers,
+      message: "Account created successfully. Please check your email for activation.",
+      customer,
     });
   } catch (error) {
-    res.status(error?.statusCode || 400).json({
+    return res.status(400).json({
       success: false,
       message: error.message,
     });
   }
 }
 
-function getAllUsers(req, res) {
-  Customers.find()
-    .then((data) => {
-      res.status(200).json({
-        success: true,
-        customers: data,
-      });
-    })
-    .catch((err) => {
-      res.status(200).json({
-        success: false,
-        message: "Error found during Customers creation",
-        error: err,
-      });
+async function getAllUsers(req, res) {
+  try {
+    const data = await Customers.find();
+    res.status(200).json({ success: true, customers: data });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Error occurred while fetching customers.",
+      error: error.message,
     });
+  }
 }
 
 async function update(req, res) {
@@ -79,72 +58,65 @@ async function update(req, res) {
   const token = req.headers.authorization;
   const id = req?.authUser?.uId;
 
-  const existingUser = await Customers.exists({ email, _id: { $ne: id } });
+  try {
+    const existingUser = await Customers.exists({ email, _id: { $ne: id } });
 
-  if (existingUser != null) {
-    res.status(200).json({
-      success: false,
-      message: "This email is already used. ",
-    });
-  } else {
-    const statusChange = (email != existingUser?.email && false) || active;
-    Customers.findByIdAndUpdate(
+    if (existingUser) {
+      return res.status(400).json({
+        success: false,
+        message: "This email is already used.",
+      });
+    }
+
+    const updatedCustomer = await Customers.findByIdAndUpdate(
       id,
       {
         name,
         email,
         password,
-        active: statusChange,
-        profilePic,
+        active: active ?? true,
       },
       { new: true }
-    )
-      .then((data) => {
-        res.status(200).json({
-          success: true,
-          message: "Customers is Updated",
-          customers: {
-            token: token,
-            name: data.name,
-            email: data.email,
-            profilePic: data.profilePic,
-          },
-        });
-      })
-      .catch((err) => {
-        res.status(200).json({
-          success: false,
-          message: "Error found during Customers updation",
-          error: err,
-        });
-      });
+    );
+
+    res.status(200).json({
+      success: true,
+      message: "Customer updated successfully",
+      customer: updatedCustomer,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Error during customer update.",
+      error: error.message,
+    });
   }
 }
 
 async function deleteUser(req, res) {
-  const { _id } = req?.params;
-  const existingUser = await Customers.exists({ _id });
+  const { _id } = req.params;
 
-  if (existingUser == null) {
-    res.status(200).json({
-      success: false,
-      message: "Customers does not exist",
-    });
-  } else {
-    Customers.findByIdAndDelete(_id)
-      .then((data) => {
-        res.status(200).json({
-          success: true,
-          message: `Customers is deleted Id: ${_id}`,
-        });
-      })
-      .catch((err) => {
-        res.status(200).json({
-          success: false,
-          message: "Error found during Customers creation",
-          error: err,
-        });
+  try {
+    const existingUser = await Customers.exists({ _id });
+
+    if (!existingUser) {
+      return res.status(404).json({
+        success: false,
+        message: "Customer does not exist.",
       });
+    }
+
+    await Customers.findByIdAndDelete(_id);
+    res.status(200).json({
+      success: true,
+      message: `Customer deleted successfully. ID: ${_id}`,
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      message: "Error occurred while deleting customer.",
+      error: error.message,
+    });
   }
 }
 
@@ -153,46 +125,36 @@ async function activate(req, res) {
   let data;
 
   try {
-    if (!token) throw new Error("Unauthorization access");
+    if (!token) throw new Error("Unauthorized access.");
 
-    await jwt.verify(token, process?.env?.JWT_KEY, function (err, decoded) {
-      if (err) throw new Error("Invalid url.");
+    await jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
+      if (err) throw new Error("Invalid token.");
       data = decoded;
     });
 
-    const activated = await Customers.findById(data?.uId);
+    const customer = await Customers.findById(data?.uId);
 
-    if (activated?.active) {
-      return res.status(200).json({
+    if (customer?.active) {
+      return res.status(400).json({
         success: false,
-        message: "Invalid url",
+        message: "Account already activated.",
       });
     }
 
-    const customers = await Customers.findByIdAndUpdate(data?.uId, { active: true });
+    const updatedCustomer = await Customers.findByIdAndUpdate(data?.uId, { active: true });
 
-    if (!customers)
-      throw new Error("Activation failed. Please check the URL is valid.");
+    if (!updatedCustomer) {
+      throw new Error("Activation failed. Invalid URL.");
+    }
 
-    const status = await sendEmail({
-      to: customers?.email,
-      subject: "Your ToDo Account is activated",
-      text: `
-                  Thank you ${customers?.name}!
-                  Your account is activated successfully. Now you can use the todo account.
-              `,
-    });
-
-    if (!status)
-      throw new Error("Account activation succes. Failed to send email.");
-
-    res.redirect(
-      `${process.env.CLIENT_HOST_URL}/activation-success/Account is activated`
-    );
-  } catch (error) {
     res.status(200).json({
+      success: true,
+      message: "Account activated successfully.",
+    });
+  } catch (error) {
+    res.status(400).json({
       success: false,
-      error: error.message,
+      message: error.message,
     });
   }
 }

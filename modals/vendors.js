@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { USER_ROLE_VENDOR } from "../utilities/constants";
+import { USER_ROLE_VENDOR } from "../utilities/constants.js";
 
 const vendorsSchema = mongoose.Schema(
   {
@@ -22,6 +22,7 @@ const vendorsSchema = mongoose.Schema(
       type: String,
       required: true,
       match: [/\S+@\S+\.\S+/, "Please provide a valid email address"],
+      unique: true,
       index: true,
     },
     password: {

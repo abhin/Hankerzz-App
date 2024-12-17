@@ -1,5 +1,5 @@
 import mongoose from "mongoose";
-import { USER_ROLE_CUSTOMER, USER_ROLE_VENDOR } from "../utilities/constants";
+import { USER_ROLE_CUSTOMER, USER_ROLE_VENDOR } from "../utilities/constants.js";
 
 const bankAccountDetailsSchema = mongoose.Schema({
     bankAccountNo: {

@@ -6,47 +6,12 @@ import {
   deleteUser,
   activate,
 } from "../controllers/customers.js";
-import { body } from "express-validator";
-import { getValidationResult } from "../middlewares/validator.js";
-
+import { validateCreateUser } from "../middlewares/customers.js";
 
 const router = express.Router();
 
-router.post(
-  "/signup",
-  body("name")
-    .exists()
-    .trim()
-    .notEmpty()
-    .isLength({ min: 3 })
-    .withMessage("Name should be Minimum 3 characters"),
-  body("email").exists().trim().isEmail().withMessage("Invalid Email"),
-  body("password")
-    .trim()
-    .exists()
-    .isLength({ min: 5 })
-    .withMessage("Password should be Minimum 5 characters"),
-  getValidationResult,
-  create
-);
-
-router.post(
-  "/create",
-  body("name")
-    .exists()
-    .trim()
-    .notEmpty()
-    .isLength({ min: 3 })
-    .withMessage("Name should be Minimum 3 characters"),
-  body("email").exists().trim().isEmail().withMessage("Invalid Email"),
-  body("password")
-    .trim()
-    .exists()
-    .isLength({ min: 5 })
-    .withMessage("Password should be Minimum 5 characters"),
-  getValidationResult,
-  create
-);
+router.post("/signup", validateCreateUser(), create);
+router.post("/create", validateCreateUser(), create);
 
 router.get("/read", getAllUsers);
 router.put("/update", update);
