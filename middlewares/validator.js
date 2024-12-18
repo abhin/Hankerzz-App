@@ -1,6 +1,6 @@
-import { body, validationResult } from "express-validator";
+import { body, validationResult, param } from "express-validator";
 
-export const requiredStringValidation = (field, minLength = 1) => {
+export const requiredFieldValidation = (field, minLength = 0) => {
   const capitalizeField = (str) => str.charAt(0).toUpperCase() + str.slice(1);
 
   let validateBody = body(field)
@@ -11,7 +11,7 @@ export const requiredStringValidation = (field, minLength = 1) => {
     .trim();
 
   if (minLength > 0) {
-    validateBody = validateBody
+    validateBody
       .isLength({ min: minLength })
       .withMessage(
         `${capitalizeField(
@@ -23,6 +23,14 @@ export const requiredStringValidation = (field, minLength = 1) => {
   return validateBody;
 };
 
+export const requiredParamValidation = (paramName) => {
+  const validateParam = param(paramName)
+    .exists()
+    .withMessage(`${paramName} is required.`);
+
+  return validateParam;
+};
+
 export function getValidationResult(req, res, next) {
   try {
     const result = validationResult(req);
@@ -31,7 +39,7 @@ export function getValidationResult(req, res, next) {
     } else {
       res.status(400).json({
         success: false,
-        message: result.array(), 
+        message: result.array(),
       });
     }
   } catch (error) {

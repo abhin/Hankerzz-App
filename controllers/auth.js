@@ -21,7 +21,7 @@ async function login(req, res) {
       throw new Error("Invalid login credentials.");
     }
 
-    if (!customers?.active) {
+    if (!customers?.status) {
       throw new Error("Account is inactive.");
     }
 
@@ -31,10 +31,7 @@ async function login(req, res) {
       customers: {
         token: generateAccessToken(customers._id),
         name: customers.name,
-        email: customers.email,
-        profilePic:
-        customers?.profilePic && ((isUrl(customers.profilePic) && customers.profilePic) ||
-          getProfilePicUrl(req, customers.profilePic)),
+        email: customers.email
       },
     });
   } catch (error) {
@@ -56,13 +53,12 @@ async function googleLoginCallBack(req, res) {
       {
         name,
         email,
-        profilePic: picture,
-        active: email_verified,
+        status: email_verified,
       },
       { new: true, upsert: true, sort: { createdAt: -1 } }
     );
 
-    if (!customers.active && !(await sendAccountActivationEmail(customers))) {
+    if (!customers.status && !(await sendAccountActivationEmail(customers))) {
       throw new Error(
         "Failed to send activation email. Please contact support."
       );
@@ -90,8 +86,7 @@ function googleUserVerify(req, res) {
         customers: {
           token: generateAccessToken(data._id),
           name: data.name,
-          email: data.email,
-          profilePic: data.profilePic,
+          email: data.email
         },
       });
     })

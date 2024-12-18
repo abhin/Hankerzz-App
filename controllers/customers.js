@@ -1,34 +1,32 @@
 import bcrypt from "bcrypt";
 import Customers from "../modals/customers.js";
 import { sendAccountActivationEmail } from "../utilities/function.js";
-import jwt from "jsonwebtoken";
 
 async function create(req, res) {
-  const { name, email, password, profilePic, active, sendEmail } = req.body;
+  const { name, email, password, status, sendEmail } = req.body;
   try {
-    const existingUser = await Customers.exists({ email });
-
-    if (existingUser) {
-      throw new Error("Customer already exists.");
-    }
-
-    const passwordHash = await bcrypt.hash(password, parseInt(process.env.SALT_ROUNDS));
+    const passwordHash = await bcrypt.hash(
+      password,
+      parseInt(process.env.SALT_ROUNDS)
+    );
 
     const customer = await Customers.create({
       name,
       email,
       password: passwordHash,
-      profilePic,
-      active,
+      status,
     });
 
     if (sendEmail && !(await sendAccountActivationEmail(customer))) {
-      throw new Error("Failed to send activation email. Please contact support.");
+      throw new Error(
+        "Failed to send activation email. Please contact support."
+      );
     }
 
     return res.status(200).json({
       success: true,
-      message: "Account created successfully. Please check your email for activation.",
+      message:
+        "Account created successfully. Please check your email for activation.",
       customer,
     });
   } catch (error) {
@@ -41,8 +39,11 @@ async function create(req, res) {
 
 async function getAllUsers(req, res) {
   try {
-    const data = await Customers.find();
-    res.status(200).json({ success: true, customers: data });
+    const customers = await Customers.find().select("-password");
+    res.status(200).json({
+      success: true,
+      customers,
+    });
   } catch (error) {
     res.status(500).json({
       success: false,
@@ -53,35 +54,30 @@ async function getAllUsers(req, res) {
 }
 
 async function update(req, res) {
-  const { name, email, password, active } = req.body;
-  const profilePic = req?.file?.location || req?.file?.path;
-  const token = req.headers.authorization;
+  const { name, email, password, status } = req.body;
   const id = req?.authUser?.uId;
 
   try {
-    const existingUser = await Customers.exists({ email, _id: { $ne: id } });
+    if (!id) throw new Error("User ID not found.");
 
-    if (existingUser) {
-      return res.status(400).json({
-        success: false,
-        message: "This email is already used.",
-      });
+    const updatedFields = { name, email, status: status ?? true };
+
+    if (password) {
+      updatedFields.password = await bcrypt.hash(
+        password,
+        parseInt(process.env.SALT_ROUNDS)
+      );
     }
 
     const updatedCustomer = await Customers.findByIdAndUpdate(
       id,
-      {
-        name,
-        email,
-        password,
-        active: active ?? true,
-      },
+      updatedFields,
       { new: true }
     );
 
     res.status(200).json({
       success: true,
-      message: "Customer updated successfully",
+      message: "Customer updated successfully.",
       customer: updatedCustomer,
     });
   } catch (error) {
@@ -121,27 +117,12 @@ async function deleteUser(req, res) {
 }
 
 async function activate(req, res) {
-  const { token } = req.params;
-  let data;
+  const { userId } = req.params;
 
   try {
-    if (!token) throw new Error("Unauthorized access.");
-
-    await jwt.verify(token, process.env.JWT_KEY, (err, decoded) => {
-      if (err) throw new Error("Invalid token.");
-      data = decoded;
+    const updatedCustomer = await Customers.findByIdAndUpdate(userId, {
+      status: true,
     });
-
-    const customer = await Customers.findById(data?.uId);
-
-    if (customer?.active) {
-      return res.status(400).json({
-        success: false,
-        message: "Account already activated.",
-      });
-    }
-
-    const updatedCustomer = await Customers.findByIdAndUpdate(data?.uId, { active: true });
 
     if (!updatedCustomer) {
       throw new Error("Activation failed. Invalid URL.");
