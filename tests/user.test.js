@@ -1,7 +1,7 @@
 import supertest from "supertest";
 import server from "../server";
 import mongoose from "mongoose";
-import Customers from "../modals/customers";
+import Users from "../models/users";
 import { URL } from "../utilities/constants";
 
 let serverInstance;
@@ -23,7 +23,7 @@ beforeEach(async () => {
   if (mongoose.connection.readyState === 0) {
     await mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
   }
-  await Customers.deleteMany();
+  await Users.deleteMany();
 });
 
 afterAll(async () => {
@@ -34,7 +34,7 @@ afterAll(async () => {
 });
 
 describe("Signup test cases", () => {
-  it("Customers exists", async () => {
+  it("Users exists", async () => {
     await supertest(server).post(`${URL}/users/signup`).send({
       name: "Apple",
       email: "suz@gmail.com",
@@ -49,10 +49,10 @@ describe("Signup test cases", () => {
 
     expect(response.status).toEqual(400);
     expect(response.body.success).toEqual(false);
-    expect(response.body.message).toEqual("Customers already exists.");
+    expect(response.body.message).toEqual("Users already exists.");
   });
 
-  it("Customers Creation Error - Simulate DB Disconnection", async () => {
+  it("Users Creation Error - Simulate DB Disconnection", async () => {
     await mongoose.connection.close();
 
     const response = await supertest(server).post(`${URL}/users/signup`).send({
@@ -68,7 +68,7 @@ describe("Signup test cases", () => {
     await mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
   });
 
-  it("Create Customers Test", async () => {
+  it("Create Users Test", async () => {
     if (mongoose.connection.readyState === 0) {
       await mongoose.connect(process.env.DB_URL, { useNewUrlParser: true, useUnifiedTopology: true });
     }

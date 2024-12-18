@@ -23,7 +23,7 @@ export async function sendEmail({
       port: EMAIL_PORT,
       secure: true,
       auth: {
-        customers: process.env.FROM_EMAIL,
+        users: process.env.FROM_EMAIL,
         pass: process.env.GMAIL_PASS,
       },
     });
@@ -51,8 +51,8 @@ export function generateAccessToken(uId, expiresIn = "1h") {
   });
 }
 
-export function sendAccountActivationEmail(customers, subject, text) {
-  const { email, name, _id } = customers;
+export function sendAccountActivationEmail(users, subject, text) {
+  const { email, name, _id } = users;
   return sendEmail({
     to: email,
     subject: subject || "Your ToDo Account Activation",

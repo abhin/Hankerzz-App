@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import Customers from "../modals/customers.js";
+import Users from "../models/users.js";
 import { sendAccountActivationEmail } from "../utilities/function.js";
 
 async function create(req, res) {
@@ -10,7 +10,7 @@ async function create(req, res) {
       parseInt(process.env.SALT_ROUNDS)
     );
 
-    const customer = await Customers.create({
+    const customer = await Users.create({
       name,
       email,
       password: passwordHash,
@@ -39,15 +39,15 @@ async function create(req, res) {
 
 async function getAllUsers(req, res) {
   try {
-    const customers = await Customers.find().select("-password");
+    const users = await Users.find().select("-password");
     res.status(200).json({
       success: true,
-      customers,
+      users,
     });
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: "Error occurred while fetching customers.",
+      message: "Error occurred while fetching users.",
       error: error.message,
     });
   }
@@ -55,10 +55,10 @@ async function getAllUsers(req, res) {
 
 async function update(req, res) {
   const { name, email, password, status } = req.body;
-  const id = req?.authUser?.uId;
+  const id = req?.authUsers?.uId;
 
   try {
-    if (!id) throw new Error("User ID not found.");
+    if (!id) throw new Error("Users ID not found.");
 
     const updatedFields = { name, email, status: status ?? true };
 
@@ -69,7 +69,7 @@ async function update(req, res) {
       );
     }
 
-    const updatedCustomer = await Customers.findByIdAndUpdate(
+    const updatedUsers = await Users.findByIdAndUpdate(
       id,
       updatedFields,
       { new: true }
@@ -77,8 +77,8 @@ async function update(req, res) {
 
     res.status(200).json({
       success: true,
-      message: "Customer updated successfully.",
-      customer: updatedCustomer,
+      message: "Users updated successfully.",
+      customer: updatedUsers,
     });
   } catch (error) {
     res.status(400).json({
@@ -93,19 +93,20 @@ async function deleteUser(req, res) {
   const { _id } = req.params;
 
   try {
-    const existingUser = await Customers.exists({ _id });
+    const existingUsers = await Users.exists({ _id });
 
-    if (!existingUser) {
+    if (!existingUsers) {
       return res.status(404).json({
         success: false,
-        message: "Customer does not exist.",
+        message: "Users does not exist.",
       });
     }
 
-    await Customers.findByIdAndDelete(_id);
+    await Users.findByIdAndDelete(_id);
+
     res.status(200).json({
       success: true,
-      message: `Customer deleted successfully. ID: ${_id}`,
+      message: `Users deleted successfully. ID: ${_id}`,
     });
   } catch (error) {
     res.status(400).json({
@@ -117,14 +118,18 @@ async function deleteUser(req, res) {
 }
 
 async function activate(req, res) {
-  const { userId } = req.params;
+  const { UsersId } = req.params;
 
   try {
-    const updatedCustomer = await Customers.findByIdAndUpdate(userId, {
-      status: true,
-    });
+    if (!UsersId) throw new Error("Users ID not found.");
 
-    if (!updatedCustomer) {
+    const updatedUsers = await Users.findByIdAndUpdate(
+      UsersId,
+      { status: true },
+      { new: true }
+    );
+
+    if (!updatedUsers) {
       throw new Error("Activation failed. Invalid URL.");
     }
 

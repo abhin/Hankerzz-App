@@ -1,6 +1,6 @@
 import supertest from "supertest";
 import mongoose from "mongoose";
-import Customers from "../modals/customers";
+import Users from "../models/users";
 import server from "../server";
 import { URL } from "../utilities/constants";
 
@@ -9,7 +9,7 @@ beforeAll(async () => {
 });
 
 beforeEach(() => {
-  Customers.deleteMany();
+  Users.deleteMany();
 });
 
 describe("Signup test cases", () => {

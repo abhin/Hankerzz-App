@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
-import { USER_ROLE_CUSTOMER } from "../utilities/constants.js";
+import { USER_ROLE_CUSTOMER, USER_ROLE_VENDOR } from "../utilities/constants.js";
 
-const customersSchema = mongoose.Schema(
+const usersSchema = mongoose.Schema(
   {
     name: {
       type: String,
@@ -22,13 +22,8 @@ const customersSchema = mongoose.Schema(
     role: {
       type: String,
       required: true,
-      enum: [USER_ROLE_CUSTOMER],
-      default: USER_ROLE_CUSTOMER,
+      enum: [USER_ROLE_CUSTOMER, USER_ROLE_VENDOR],
       index: true,
-    },
-    address: {
-      type: String,
-      required: false,
     },
     status: {
       type: Boolean,
@@ -40,6 +35,6 @@ const customersSchema = mongoose.Schema(
   { timestamps: true }
 );
 
-const Customers = mongoose.model("Customers", customersSchema);
+const users = mongoose.model("users", usersSchema);
 
-export default Customers;
+export default users;

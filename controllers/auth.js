@@ -1,6 +1,6 @@
 import bcrypt from "bcrypt";
 import isUrl from "is-url";
-import Customers from "../modals/customers.js";
+import Users from "../models/users.js";
 import {
   generateAccessToken,
   sendAccountActivationEmail,
@@ -14,24 +14,24 @@ async function login(req, res) {
       throw new Error("Invalid login.");
     }
 
-    const customers = await Customers.findOne({ email });
-    const match = customers && (await bcrypt.compare(password, customers?.password));
+    const users = await Users.findOne({ email });
+    const match = users && (await bcrypt.compare(password, users?.password));
 
     if (!match) {
       throw new Error("Invalid login credentials.");
     }
 
-    if (!customers?.status) {
+    if (!users?.status) {
       throw new Error("Account is inactive.");
     }
 
     res.status(200).json({
       success: true,
       message: "Login success",
-      customers: {
-        token: generateAccessToken(customers._id),
-        name: customers.name,
-        email: customers.email
+      users: {
+        token: generateAccessToken(users._id),
+        name: users.name,
+        email: users.email
       },
     });
   } catch (error) {
@@ -44,11 +44,11 @@ async function login(req, res) {
 
 async function googleLoginCallBack(req, res) {
   const { name, picture, email, email_verified } = JSON.parse(
-    req?.customers?.profile?._raw
+    req?.users?.profile?._raw
   );
 
   try {
-    const customers = await Customers.findOneAndUpdate(
+    const users = await Users.findOneAndUpdate(
       { email },
       {
         name,
@@ -58,7 +58,7 @@ async function googleLoginCallBack(req, res) {
       { new: true, upsert: true, sort: { createdAt: -1 } }
     );
 
-    if (!customers.status && !(await sendAccountActivationEmail(customers))) {
+    if (!users.status && !(await sendAccountActivationEmail(users))) {
       throw new Error(
         "Failed to send activation email. Please contact support."
       );
@@ -78,12 +78,12 @@ async function googleLoginCallBack(req, res) {
 function googleUserVerify(req, res) {
   const { uId } = req.authUser;
 
-  Customers.findOne({ email: uId })
+  Users.findOne({ email: uId })
     .then((data) => {
       res.status(200).json({
         success: true,
-        message: "Google customers verification success",
-        customers: {
+        message: "Google users verification success",
+        users: {
           token: generateAccessToken(data._id),
           name: data.name,
           email: data.email
@@ -93,7 +93,7 @@ function googleUserVerify(req, res) {
     .catch((err) => {
       res.status(200).json({
         success: false,
-        message: "Error/ Timeout Google customers verification. Please try again",
+        message: "Error/ Timeout Google users verification. Please try again",
         error: err,
       });
     });

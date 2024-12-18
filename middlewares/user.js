@@ -1,35 +1,35 @@
 import { body } from "express-validator";
 import jwt from "jsonwebtoken";
-import Customers from "../modals/customers.js";
+import Users from "../models/users.js";
 import {
   requiredFieldValidation,
   getValidationResult,
   requiredParamValidation,
 } from "./validator.js";
 
-export const checkCustomerExistence = async (req, res, next) => {
+export const checkUsersExistence = async (req, res, next) => {
   const { _id } = req.params;
   const { email } = req.body;
 
   try {
     if (_id) {
-      const existingUserById = await Customers.exists({ _id });
+      const existingUserById = await Users.exists({ _id });
 
       if (!existingUserById) {
         return res.status(404).json({
           success: false,
-          message: "Customer does not exist with the provided ID.",
+          message: "Users does not exist with the provided ID.",
         });
       }
     }
 
     if (email) {
-      const existingUserByEmail = await Customers.exists({ email });
+      const existingUserByEmail = await Users.exists({ email });
 
       if (existingUserByEmail) {
         return res.status(409).json({
           success: false,
-          message: "Customer already exists with this email.",
+          message: "Users already exists with this email.",
         });
       }
     }
@@ -54,9 +54,9 @@ const validateToken = async (req, res, next) => {
 
     if (!userId) throw new Error("Invalid token.");
 
-    const customer = await Customers.exists({ _id: userId });
+    const customer = await Users.exists({ _id: userId });
 
-    if (!customer) throw new Error("Customer not found.");
+    if (!customer) throw new Error("Users not found.");
 
     if (customer.status) {
       return res.status(400).json({
@@ -84,7 +84,7 @@ export const validateCreateUser = () => [
     .customSanitizer((value) => value.toLowerCase()),
   requiredFieldValidation("password", 5),
   body("address").optional().trim(),
-  checkCustomerExistence,
+  checkUsersExistence,
   getValidationResult,
 ];
 
@@ -95,7 +95,7 @@ export const validateUpdateUser = (id) => [
     .withMessage("Invalid email address format")
     .customSanitizer((value) => value.toLowerCase())
     .custom(async (value, { req }) => {
-      const existingUser = await Customers.findOne({
+      const existingUser = await Users.findOne({
         email: value,
         _id: { $ne: id },
       });
@@ -113,7 +113,7 @@ export const validateUpdateUser = (id) => [
 
 export const validateDeleteUser = () => [
   requiredParamValidation("_id").isMongoId().withMessage("Invalid ID."),
-  checkCustomerExistence,
+  checkUsersExistence,
   getValidationResult,
 ];
 

@@ -5,12 +5,12 @@ import {
   update,
   deleteUser,
   activate,
-} from "../controllers/customers.js";
+} from "../controllers/user.js";
 import {
   validateCreateUser,
   validateUpdateUser,
   validateDeleteUser,
-} from "../middlewares/customers.js";
+} from "../middlewares/user.js";
 
 const router = express.Router();
 
