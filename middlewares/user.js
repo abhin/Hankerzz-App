@@ -18,7 +18,7 @@ export const checkUsersExistence = async (req, res, next) => {
       if (!existingUserById) {
         return res.status(404).json({
           success: false,
-          message: "Users does not exist with the provided ID.",
+          message: "User does not exist with the provided ID.",
         });
       }
     }
@@ -29,7 +29,7 @@ export const checkUsersExistence = async (req, res, next) => {
       if (existingUserByEmail) {
         return res.status(409).json({
           success: false,
-          message: "Users already exists with this email.",
+          message: "User already exists with this email.",
         });
       }
     }
@@ -38,39 +38,45 @@ export const checkUsersExistence = async (req, res, next) => {
   } catch (error) {
     return res.status(500).json({
       success: false,
-      message: "Error while checking customer existence.",
+      message: "Error while checking user existence.",
       error: error.message,
     });
   }
 };
 
-const validateToken = async (req, res, next) => {
+export const validateToken = async (req, res, next) => {
   const { token } = req.params;
+
   try {
-    if (!token) throw new Error("Unauthorized access.");
-
-    const decoded = jwt.verify(token, process.env.JWT_KEY);
-    const userId = decoded?.uId;
-
-    if (!userId) throw new Error("Invalid token.");
-
-    const customer = await Users.exists({ _id: userId });
-
-    if (!customer) throw new Error("Users not found.");
-
-    if (customer.status) {
-      return res.status(400).json({
-        success: false,
-        message: "Account already activated.",
-      });
+    if (!token) {
+      return res.status(401).json({ success: false, message: "Token is missing." });
     }
 
-    req.userId = userId;
+    const decoded = jwt.verify(token, process.env.JWT_KEY);
+
+    req._id = decoded?.uId;
+
+    if (!req._id) {
+      return res.status(401).json({ success: false, message: "Invalid token payload." });
+    }
+
     next();
   } catch (error) {
+    if (error.name === "TokenExpiredError") {
+      return res.status(401).json({
+        success: false,
+        message: "Token has expired. Please request a new one.",
+      });
+    }
+    if (error.name === "JsonWebTokenError") {
+      return res.status(401).json({
+        success: false,
+        message: "Invalid token. Authentication failed.",
+      });
+    }
     return res.status(500).json({
       success: false,
-      message: "Error while verifying token.",
+      message: "An error occurred while validating the token.",
       error: error.message,
     });
   }
@@ -119,6 +125,33 @@ export const validateDeleteUser = () => [
 
 export const validateUserActivation = () => [
   requiredParamValidation("token"),
-  validateToken,
+  validateToken(),
+  async (req, res, next) => {
+    try {
+      const user = await Users.findById(req.userId);
+
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          message: "User not found.",
+        });
+      }
+
+      if (user.status) {
+        return res.status(400).json({
+          success: false,
+          message: "Account is already activated.",
+        });
+      }
+
+      next();
+    } catch (error) {
+      return res.status(500).json({
+        success: false,
+        message: "Error while validating user activation.",
+        error: error.message,
+      });
+    }
+  },
   getValidationResult,
 ];

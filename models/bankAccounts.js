@@ -2,6 +2,12 @@ import mongoose from "mongoose";
 
 const bankAccountSchema = mongoose.Schema(
   {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      required: true,
+      index: true,
+    },
     accountHolderName: {
       type: String,
       required: true,
@@ -10,6 +16,7 @@ const bankAccountSchema = mongoose.Schema(
     accountNumber: {
       type: String,
       required: true,
+      unique: true,
       index: true,
     },
     sortCode: {
@@ -52,4 +59,4 @@ const bankAccountSchema = mongoose.Schema(
 
 const bankAccounts = mongoose.model("bankAccounts", bankAccountSchema);
 
-module.exports = bankAccounts;
+export default bankAccounts;

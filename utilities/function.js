@@ -38,10 +38,7 @@ export async function sendEmail({
 
     return info;
   } catch (error) {
-    return {
-      success: false,
-      message:error
-    };
+    throw new Error("Failed to send email. " + error.message);
   }
 }
 

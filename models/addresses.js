@@ -1,6 +1,13 @@
 import mongoose from "mongoose";
 
-const addressesSchema = mongoose.Schema({
+const addressesSchema = mongoose.Schema(
+  {
+    user: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      required: true,
+      index: true,
+    },
     houseNumber: {
       type: String,
       required: true,
@@ -30,11 +37,13 @@ const addressesSchema = mongoose.Schema({
     },
     country: {
       type: String,
-      default: 'United Kingdom',
+      default: "United Kingdom",
       trim: true,
-    }
-  }, { timestamps: true });
-  
+    },
+  },
+  { timestamps: true }
+);
+
 const addresses = mongoose.model("addresses", addressesSchema);
 
 export default addresses;

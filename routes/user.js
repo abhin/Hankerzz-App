@@ -10,27 +10,15 @@ import {
   validateCreateUser,
   validateUpdateUser,
   validateDeleteUser,
+  validateUserActivation,
 } from "../middlewares/user.js";
 
 const router = express.Router();
 
 router.post("/signup", validateCreateUser(), create);
-router.post("/create", validateCreateUser(), create);
-
 router.get("/read", getAllUsers);
-
 router.put("/update", validateUpdateUser(), update);
-
-router.get(
-  "/delete/:_id",
-  validateDeleteUser(),
-  deleteUser
-);
-
-router.get(
-  "/activate/:token",
-  validateDeleteUser(), 
-  activate
-);
+router.delete("/delete/:_id", validateDeleteUser(), deleteUser);
+router.get("/activate/:token", validateUserActivation(), activate);
 
 export default router;

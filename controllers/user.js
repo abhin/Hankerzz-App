@@ -3,7 +3,7 @@ import Users from "../models/users.js";
 import { sendAccountActivationEmail } from "../utilities/function.js";
 
 async function create(req, res) {
-  const { name, email, password, status, sendEmail } = req.body;
+  const { name, email, password, roleId, status, sendEmail } = req.body;
   try {
     const passwordHash = await bcrypt.hash(
       password,
@@ -14,6 +14,7 @@ async function create(req, res) {
       name,
       email,
       password: passwordHash,
+      roleId,
       status,
     });
 
@@ -60,7 +61,7 @@ async function update(req, res) {
   try {
     if (!id) throw new Error("Users ID not found.");
 
-    const updatedFields = { name, email, status: status ?? true };
+    const updatedFields = { name, email, status };
 
     if (password) {
       updatedFields.password = await bcrypt.hash(
@@ -69,11 +70,9 @@ async function update(req, res) {
       );
     }
 
-    const updatedUsers = await Users.findByIdAndUpdate(
-      id,
-      updatedFields,
-      { new: true }
-    );
+    const updatedUsers = await Users.findByIdAndUpdate(id, updatedFields, {
+      new: true,
+    });
 
     res.status(200).json({
       success: true,
@@ -118,13 +117,13 @@ async function deleteUser(req, res) {
 }
 
 async function activate(req, res) {
-  const { UsersId } = req.params;
+  const { _id } = req.params;
 
   try {
-    if (!UsersId) throw new Error("Users ID not found.");
+    if (!_id) throw new Error("Users ID not found.");
 
     const updatedUsers = await Users.findByIdAndUpdate(
-      UsersId,
+      _id,
       { status: true },
       { new: true }
     );
