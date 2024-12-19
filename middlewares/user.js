@@ -125,10 +125,10 @@ export const validateDeleteUser = () => [
 
 export const validateUserActivation = () => [
   requiredParamValidation("token"),
-  validateToken(),
+  validateToken,
   async (req, res, next) => {
     try {
-      const user = await Users.findById(req.userId);
+      const user = await Users.findById(req._id);
 
       if (!user) {
         return res.status(404).json({

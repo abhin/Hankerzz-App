@@ -16,6 +16,7 @@ import {
 const router = express.Router();
 
 router.post("/signup", validateCreateUser(), create);
+router.post("/create", validateCreateUser(), create);
 router.get("/read", getAllUsers);
 router.put("/update", validateUpdateUser(), update);
 router.delete("/delete/:_id", validateDeleteUser(), deleteUser);

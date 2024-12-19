@@ -10,7 +10,7 @@ async function create(req, res) {
       parseInt(process.env.SALT_ROUNDS)
     );
 
-    const customer = await Users.create({
+    const user = await Users.create({
       name,
       email,
       password: passwordHash,
@@ -18,7 +18,7 @@ async function create(req, res) {
       status,
     });
 
-    if (sendEmail && !(await sendAccountActivationEmail(customer))) {
+    if (sendEmail && !(await sendAccountActivationEmail(user))) {
       throw new Error(
         "Failed to send activation email. Please contact support."
       );
@@ -28,7 +28,7 @@ async function create(req, res) {
       success: true,
       message:
         "Account created successfully. Please check your email for activation.",
-      customer,
+      user,
     });
   } catch (error) {
     return res.status(400).json({
@@ -77,12 +77,12 @@ async function update(req, res) {
     res.status(200).json({
       success: true,
       message: "Users updated successfully.",
-      customer: updatedUsers,
+      user: updatedUsers,
     });
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: "Error during customer update.",
+      message: "Error during user update.",
       error: error.message,
     });
   }
@@ -110,7 +110,7 @@ async function deleteUser(req, res) {
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: "Error occurred while deleting customer.",
+      message: "Error occurred while deleting user.",
       error: error.message,
     });
   }

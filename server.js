@@ -12,7 +12,7 @@ const server = express();
 server.use(bodyParser.json());
 server.use(cors({ origin: "*" }));
 server.use(`${URL}/auth`, authRouters);
-server.use(`${URL}/customer`, userRouters);
+server.use(`${URL}/user`, userRouters);
 
 server.get(`${URL}/healthcheck`, (req, res) => {
   res.status(200).json({
